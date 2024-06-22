@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Serial Web</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="text-center my-4">
+      <h1><i class="fas fa-microchip"></i> Monitor Serial Web</h1>
+      <p class="lead">Acompanhe os dados do seu Arduino em tempo real</p>
+    </header>
+    <main>
+      <div id="status" class="alert alert-info text-center" role="alert">Conectando...</div>
+      <div class="text-center mb-3">
+        <button id="pause-btn" class="btn btn-warning"><i class="fas fa-pause"></i> Pausar</button>
+        <button id="clear-btn" class="btn btn-danger"><i class="fas fa-trash"></i> Limpar</button>
+      </div>
+      <div id="output" class="bg-dark text-white p-3 rounded" style="height: 400px; overflow-y: auto;"></div>
+    </main>
+  </div>
+
+  <script>
+    const outputDiv = document.getElementById('output');
+    const statusDiv = document.getElementById('status');
+    const pauseBtn = document.getElementById('pause-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const ws = new WebSocket('ws://localhost:3000');
+
+    let isPaused = false;
+
+    ws.onmessage = (event) => {
+      if (!isPaused) {
+        const message = event.data;
+        if (message.startsWith('Erro:')) {
+          statusDiv.classList.replace('alert-info', 'alert-danger');
+          statusDiv.textContent = message;
+        } else {
+          const p = document.createElement('p');
+          p.textContent = message;
+          outputDiv.appendChild(p);
+          outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll para o final
+        }
+      }
+    };
+
+    ws.onopen = () => {
+      statusDiv.textContent = 'Conectado ao servidor WebSocket';
+    };
+
+    ws.onclose = () => {
+      statusDiv.classList.replace('alert-info', 'alert-warning');
+      statusDiv.textContent = 'Desconectado do servidor WebSocket';
+    };
+
+    pauseBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Retomar' : '<i class="fas fa-pause"></i> Pausar';
+      pauseBtn.classList.toggle('btn-warning', !isPaused);
+      pauseBtn.classList.toggle('btn-success', isPaused);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      outputDiv.innerHTML = '';
+    });
+  </script>
+</body>
+</html>
